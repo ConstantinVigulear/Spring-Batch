@@ -100,8 +100,8 @@ public class SpringBatchConfig {
   public Job importOverseasTradeIndexesJob() {
     return new JobBuilder("importOverseasTradeIndexesJob", jobRepository)
         .start(step1())
-        .next(moveFiles())
-        .listener(listener)
-        .build();
+            .next(moveFiles())
+            .listener(listener)
+            .build();
   }
 }
