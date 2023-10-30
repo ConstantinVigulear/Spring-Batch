@@ -8,11 +8,15 @@ import com.vigulear.spring_batch.processor.ImportProcessor;
 import com.vigulear.spring_batch.processor.ExportProcessor;
 import com.vigulear.spring_batch.repository.OverseasTradeIndexRepository;
 import com.vigulear.spring_batch.tasklet.MoveFileTasklet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.SkipListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.skip.SkipPolicy;
 import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
@@ -24,12 +28,14 @@ import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
 import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.validator.ValidationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.HashMap;
@@ -42,6 +48,7 @@ import static com.vigulear.spring_batch.config.BatchConstants.*;
  */
 @Configuration
 public class SpringBatchConfig {
+  private static final Logger LOG = LoggerFactory.getLogger(OverseasTradeIndex.class);
 
   @Value("classpath*:/import/*.csv")
   private Resource[] inputFiles;
@@ -165,6 +172,9 @@ public class SpringBatchConfig {
         .reader(multiResourceReader())
         .processor(importProcessor)
         .writer(dataBaseWriter())
+        .faultTolerant()
+        .skipPolicy(skipPolicy())
+        .listener(skipListener())
         .allowStartIfComplete(true)
         .build();
   }
@@ -203,5 +213,19 @@ public class SpringBatchConfig {
         .start(exportStep())
         .listener(listener)
         .build();
+  }
+
+  public SkipPolicy skipPolicy() {
+    return (t, skipCount) -> t instanceof ValidationException;
+  }
+
+  public SkipListener<OverseasTradeIndexDTO, OverseasTradeIndex> skipListener() {
+    return new SkipListener<>() {
+
+      @Override
+      public void onSkipInProcess(@NonNull OverseasTradeIndexDTO item, @NonNull Throwable t) {
+        LOG.warn("Skipped " + item + " - " + t.getMessage());
+      }
+    };
   }
 }

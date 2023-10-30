@@ -28,12 +28,15 @@ public class ExportProcessor implements ItemProcessor<OverseasTradeIndex, Overse
             .setUnits(item.getUnits())
             .setMagnitude(item.getMagnitude())
             .setSubject(item.getSubject())
-            .setGroup(item.getGroup())
-            .setSeriesTitle1(item.getSeries().getSeriesTitle1())
-            .setSeriesTitle2(item.getSeries().getSeriesTitle2())
-            .setSeriesTitle3(item.getSeries().getSeriesTitle3())
-            .setSeriesTitle4(item.getSeries().getSeriesTitle4())
-            .setSeriesTitle5(item.getSeries().getSeriesTitle5());
+            .setGroup(item.getGroup());
+
+    if (item.getSeries() != null) {
+      dto.setSeriesTitle1(item.getSeries().getSeriesTitle1())
+          .setSeriesTitle2(item.getSeries().getSeriesTitle2())
+          .setSeriesTitle3(item.getSeries().getSeriesTitle3())
+          .setSeriesTitle4(item.getSeries().getSeriesTitle4())
+          .setSeriesTitle5(item.getSeries().getSeriesTitle5());
+    }
 
     LOG.info("Processing record number {} ...", recordNumber);
 
